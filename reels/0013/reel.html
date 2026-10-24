@@ -1,0 +1,166 @@
+<!doctype html>
+<html><head><meta charset="utf-8">
+<!-- № 13 · ЮМОР-СЦЕНКА (KY), ведущий Черепашка: «Конок келди!» — гости без звонка, стол пустой, в холодильнике кефир, Черепашка сам становится украшением стола, но гости берут ложки. 31 с. -->
+<style>
+@font-face{font-family:Corm;font-weight:600;src:url(../../assets/fonts/corm-cyrext.woff2);unicode-range:U+0460-052F}
+@font-face{font-family:Corm;font-weight:600;src:url(../../assets/fonts/corm-cyr.woff2);unicode-range:U+0400-045F,U+2116}
+@font-face{font-family:Corm;font-weight:600;src:url(../../assets/fonts/corm-lat.woff2)}
+@font-face{font-family:Corm;font-style:italic;font-weight:500;src:url(../../assets/fonts/corm-i-cyr.woff2);unicode-range:U+0400-045F}
+@font-face{font-family:Man;font-weight:500 800;src:url(../../assets/fonts/manrope-cyrext.woff2);unicode-range:U+0460-052F}
+@font-face{font-family:Man;font-weight:500 800;src:url(../../assets/fonts/manrope-cyr.woff2);unicode-range:U+0400-045F}
+@font-face{font-family:Man;font-weight:500 800;src:url(../../assets/fonts/manrope-lat.woff2)}
+@font-face{font-family:Mono;font-weight:500;src:url(../../assets/fonts/jbm-cyr.woff2);unicode-range:U+0400-045F,U+2116}
+@font-face{font-family:Mono;font-weight:500;src:url(../../assets/fonts/jbm-lat.woff2)}
+html,body{margin:0;width:1080px;height:1920px;overflow:hidden;background:#3f554e}
+#stage{position:absolute;inset:0;overflow:hidden}
+svg{position:absolute;left:0;top:0}
+#txt{position:absolute;left:60px;right:60px;top:330px;text-align:center;font:800 76px/1.08 Man;color:#fff;text-shadow:0 5px 0 #c95c23,0 10px 26px rgba(0,0,0,.5)}
+#sub{position:absolute;left:0;right:0;bottom:250px;text-align:center;display:none}
+#sub span{display:inline-block;max-width:860px;padding:0 24px;color:#fff;font:700 40px/1.25 Man;white-space:pre-line;text-shadow:0 2px 6px rgba(0,0,0,.55),0 0 2px rgba(0,0,0,.6)}
+#txt .w{display:inline-block;white-space:pre}
+#txt .n{color:#ffd7b8}
+#txt .hl{color:#ffd7b8}
+#label{position:absolute;left:0;right:0;top:380px;text-align:center;font:500 30px Mono;color:#df8448;letter-spacing:4px}
+#badge{position:absolute;left:0;right:0;top:196px;text-align:center;justify-content:center}#badge img{height:150px;filter:brightness(0) invert(1);opacity:0.5}
+#final{position:absolute;inset:0;display:none;background:radial-gradient(circle at 50% 40%,#f7f3e9,#e9e2ce 60%,#aecbc3)}
+#final img{position:absolute;left:50%;top:330px;height:440px;transform:translateX(-50%)}
+#final .s{position:absolute;left:0;right:0;text-align:center;color:#516a63}
+canvas{position:absolute;inset:0}
+
+#hostL{position:absolute;inset:0;pointer-events:none}
+#hk{top:300px !important}
+</style><script src="../../engine/cherepashka.js"></script><script src="voice.js"></script></head><body>
+<div id="stage">
+ <svg id="world" width="1080" height="1920"></svg>
+ <canvas id="fx" width="1080" height="1920"></canvas>
+ <div id="final"><img src="../../assets/logo_brown.png">
+  <div class="s" style="top:820px;font:600 88px Corm">Конокко — Черепашка.</div>
+  <div class="s" style="top:950px;font:600 34px Man">Чалбай келген досуңузду белгилеңиз 👇</div></div>
+ <div id="hostL"></div>
+ <svg id="over" width="1080" height="1920"></svg>
+ <div id="badge"><img src="../../assets/logo_brown.png"></div>
+ <div id="txt"></div>
+ <div id="sub"><span></span></div>
+</div>
+<script>
+window.READY3D=false;const W=1080,H=1920;
+const clamp=(x,a=0,b=1)=>Math.min(b,Math.max(a,x)), ramp=(t,a,d)=>clamp((t-a)/d);
+const eo=t=>1-Math.pow(1-clamp(t),3), eio=t=>{t=clamp(t);return t<.5?4*t*t*t:1-Math.pow(-2*t+2,3)/2};
+const back=t=>{t=clamp(t);const c=1.9;return 1+(c+1)*Math.pow(t-1,3)+c*Math.pow(t-1,2)};
+const lerp=(a,b,p)=>a+(b-a)*p;
+let sd=11;const rnd=()=>{sd=(sd*16807)%2147483647;return (sd-1)/2147483646};
+const CUES=[];window.CUES=CUES;const cue=(t,s,o={})=>CUES.push({t,s,...o});
+window.DURATION=31;
+window.HOOK={text:'Конок<br><i>келди?!</i>',until:1.8};
+window.PUNCH=[3.6,9.4,14.6,20.6,25.8];
+window.SHAKE=[[0.15,.5],[21.6,.5]];
+window.POPS=[{t:15.2,text:'💡',x:820,y:760,d:1.0},{t:22.6,text:'😱',x:830,y:760,d:1.2}];
+const LINES=[
+ {a:2.0,b:3.5,html:'<span class="hl">Азыр</span>?!'},
+ {a:4.0,b:9.2,html:'Дасторкон <span class="hl">бош</span>!'},
+ {a:9.8,b:14.4,html:'Кефир жана<br><span class="hl">жарым лимон</span>…'},
+ {a:15.0,b:20.4,html:'Дасторкондун <span class="hl">көркү</span>!'},
+ {a:21.0,b:25.6,html:'Мен <span class="hl">көрк</span> үчүн<br>элем го!'},
+ {a:26.0,b:28.8,html:'Досуңду <span class="hl">белгиле</span> 👇'},
+];
+const txt=document.getElementById('txt');let cur=null;
+function wordsHTML(h){return h.split(/(<br>|<span[^>]*>.*?<\/span>)/).map(p=>p.startsWith('<br')?p:p.startsWith('<span')?`<span class="w">${p}</span>`:p.split(' ').filter(Boolean).map(w=>`<span class="w">${w}</span>`).join(' ')).join(' ')}
+function drawText(t){const L=LINES.find(l=>t>=l.a&&t<l.b);if(L!==cur){cur=L;txt.innerHTML=L?wordsHTML(L.html):''}
+  if(!L)return;txt.querySelectorAll('.w').forEach((w,i)=>{const p=back(ramp(t,L.a+i*.08,.4)),o=ramp(t,L.b-.3,.3);w.style.display='inline-block';w.style.opacity=clamp(p)*(1-o);w.style.transform=`translateY(${(1-p)*40}px) scale(${.7+.3*p})`})}
+function mouthAt(t){return window.VOICE?VOICE.mouth[Math.round(t*30)]||0:0}
+function blinkAt(t){const q=(t+.9)%3.1;return q<.14?Math.sin(q/.14*Math.PI):0}
+
+const DEFS=`<defs>
+<linearGradient id="wallD" x1="0" y1="0" x2="0" y2="1"><stop offset="0" stop-color="#e9e2ce"/><stop offset=".7" stop-color="#d9cdb2"/><stop offset="1" stop-color="#c9b994"/></linearGradient>
+<linearGradient id="floorD" x1="0" y1="0" x2="0" y2="1"><stop offset="0" stop-color="#8a5a33"/><stop offset="1" stop-color="#5e3a1f"/></linearGradient>
+<linearGradient id="door" x1="0" y1="0" x2="1" y2="0"><stop offset="0" stop-color="#7a4a26"/><stop offset=".5" stop-color="#94603a"/><stop offset="1" stop-color="#6c3f1f"/></linearGradient>
+<linearGradient id="fr" x1="0" y1="0" x2="1" y2="0"><stop offset="0" stop-color="#cfd8d4"/><stop offset=".5" stop-color="#eef2ef"/><stop offset="1" stop-color="#b9c5c0"/></linearGradient>
+<linearGradient id="inF" x1="0" y1="0" x2="0" y2="1"><stop offset="0" stop-color="#fff8e8"/><stop offset="1" stop-color="#f3dcb4"/></linearGradient>
+<radialGradient id="fglow" cx=".5" cy=".5" r=".5"><stop offset="0" stop-color="#ffe7bf" stop-opacity=".95"/><stop offset=".5" stop-color="#efc1a4" stop-opacity=".35"/><stop offset="1" stop-color="#df8448" stop-opacity="0"/></radialGradient>
+<radialGradient id="glw"><stop offset="0" stop-color="#fff2d6" stop-opacity=".95"/><stop offset=".5" stop-color="#efc1a4" stop-opacity=".45"/><stop offset="1" stop-color="#df8448" stop-opacity="0"/></radialGradient>
+<linearGradient id="cloth" x1="0" y1="0" x2="0" y2="1"><stop offset="0" stop-color="#c95c23"/><stop offset="1" stop-color="#a8461a"/></linearGradient>
+<linearGradient id="spoonG" x1="0" y1="0" x2="1" y2="1"><stop offset="0" stop-color="#ffffff"/><stop offset=".5" stop-color="#c9d1ce"/><stop offset="1" stop-color="#8e9a96"/></linearGradient>
+<linearGradient id="pot" x1="0" y1="0" x2="1" y2="0"><stop offset="0" stop-color="#2f6f8f"/><stop offset=".45" stop-color="#5fa3c4"/><stop offset="1" stop-color="#245a75"/></linearGradient>
+<pattern id="orn" width="80" height="40" patternUnits="userSpaceOnUse"><path d="M0 20 Q20 0 40 20 T80 20" fill="none" stroke="#f3d7a8" stroke-width="5"/><circle cx="40" cy="20" r="5" fill="#f3d7a8"/></pattern>
+<filter id="b10"><feGaussianBlur stdDeviation="10"/></filter>
+</defs>`;
+function room(){return `<rect width="1080" height="1920" fill="url(#wallD)"/><rect y="1380" width="1080" height="540" fill="url(#floorD)"/><path d="M0 1380 H1080" stroke="#4a2c16" stroke-width="8"/>
+  <g opacity=".25">${[...Array(9)].map((_,i)=>`<path d="M${i*130} 0 V1380" stroke="#c9b994" stroke-width="3"/>`).join('')}</g>`}
+function door(t,ring){const sh=ring?Math.sin(t*60)*6*ring:0;
+  let s=`<g transform="translate(${70+sh} 520)"><rect width="330" height="860" rx="16" fill="url(#door)"/><rect x="30" y="40" width="270" height="340" rx="10" fill="none" stroke="#5a3418" stroke-width="10"/><rect x="30" y="440" width="270" height="360" rx="10" fill="none" stroke="#5a3418" stroke-width="10"/><circle cx="285" cy="440" r="20" fill="#e3b46c"/></g>`;
+  if(ring>0)for(let k=0;k<3;k++){const p=((t*2+k/3)%1);s+=`<path d="M${420+p*120} ${720-p*60} q30 60 0 120" fill="none" stroke="#c95c23" stroke-width="${10*(1-p)}" opacity="${ring*(1-p)}"/>`}
+  return s}
+function table(x,y,full){ // низкий стол с дасторконом
+  let s=`<ellipse cx="${x}" cy="${y+140}" rx="470" ry="40" fill="#000" opacity=".25"/><rect x="${x-420}" y="${y+40}" width="40" height="100" fill="#5e3a1f"/><rect x="${x+380}" y="${y+40}" width="40" height="100" fill="#5e3a1f"/>
+   <path d="M${x-470} ${y} L${x+470} ${y} L${x+500} ${y+70} L${x-500} ${y+70} Z" fill="url(#cloth)"/><rect x="${x-500}" y="${y+50}" width="1000" height="34" fill="url(#orn)" opacity=".9"/>
+   <path d="M${x-430} ${y-140} L${x+430} ${y-140} L${x+470} ${y} L${x-470} ${y} Z" fill="#d76c30"/><path d="M${x-400} ${y-125} L${x+400} ${y-125} L${x+435} ${y-15} L${x-435} ${y-15} Z" fill="none" stroke="#f3d7a8" stroke-width="5" stroke-dasharray="18 10"/>`;
+  // чайник и пиалы
+  s+=`<g transform="translate(${x+300} ${y-120})"><ellipse cx="0" cy="40" rx="80" ry="16" fill="#000" opacity=".2"/><path d="M-70 30 Q-80 -70 0 -80 Q80 -70 70 30 Z" fill="url(#pot)"/><path d="M60 -20 Q120 -40 120 -90" stroke="#245a75" stroke-width="16" fill="none" stroke-linecap="round"/><path d="M-66 -40 Q-120 -30 -100 20" stroke="#245a75" stroke-width="14" fill="none"/><ellipse cx="0" cy="-82" rx="36" ry="12" fill="#5fa3c4"/><circle cx="0" cy="-98" r="12" fill="#245a75"/><path d="M-50 -20 Q0 0 50 -20" stroke="#fff" stroke-width="6" fill="none" opacity=".7"/></g>`;
+  [[-300,-70],[-190,-40]].forEach(([dx,dy])=>s+=`<g transform="translate(${x+dx} ${y+dy})"><path d="M-46 -30 Q-40 20 0 22 Q40 20 46 -30 Z" fill="#fff"/><ellipse cx="0" cy="-30" rx="46" ry="12" fill="#c98a4a"/><path d="M-40 -6 H40" stroke="#2f6f8f" stroke-width="6"/></g>`);
+  // пустая тарелка / тарелка-подиум
+  s+=`<ellipse cx="${x}" cy="${y-60}" rx="150" ry="34" fill="#f7f3e9"/><ellipse cx="${x}" cy="${y-62}" rx="110" ry="22" fill="#e9e2ce"/>`;
+  return s}
+function fridge(t,open){const fx=560,fy=470,fw=420,fh=910;
+  let s=`<ellipse cx="${fx+fw/2}" cy="${fy+fh+10}" rx="${fw*.6}" ry="30" fill="#000" opacity=".25"/><rect x="${fx}" y="${fy}" width="${fw}" height="${fh}" rx="34" fill="url(#fr)"/>`;
+  s+=`<rect x="${fx+18}" y="${fy+18}" width="${fw-36}" height="${fh-36}" rx="22" fill="url(#inF)" opacity="${open}"/>`;
+  [0.3,0.55,0.78].forEach(k=>s+=`<rect x="${fx+30}" y="${fy+fh*k}" width="${fw-60}" height="10" rx="5" fill="#e3cfa9" opacity="${open}"/>`);
+  // кефир и пол-лимона
+  s+=`<g opacity="${open}"><g transform="translate(${fx+120} ${fy+fh*.3})"><rect x="-38" y="-170" width="76" height="170" rx="14" fill="#fbfbf7"/><path d="M-38 -170 L-20 -210 H20 L38 -170 Z" fill="#fbfbf7"/><rect x="-22" y="-226" width="44" height="18" rx="4" fill="#2f6f8f"/><rect x="-38" y="-120" width="76" height="60" fill="#2f6f8f"/><text y="-80" text-anchor="middle" font-family="Man" font-weight="800" font-size="20" fill="#fff">КЕФИР</text></g>
+   <g transform="translate(${fx+290} ${fy+fh*.55-4})"><path d="M-60 0 A60 60 0 0 1 60 0 Z" fill="#f2d64b"/><path d="M-48 -4 A48 48 0 0 1 48 -4 Z" fill="#fbef9e"/>${[...Array(6)].map((_,i)=>`<path d="M0 -4 L${Math.cos(Math.PI*(i+.5)/6)*-46} ${-Math.sin(Math.PI*(i+.5)/6)*46-4}" stroke="#f2d64b" stroke-width="4"/>`).join('')}</g>
+   <ellipse cx="${fx+fw/2-120}" cy="${fy+fh*.5}" rx="${520*open}" ry="${600*open}" fill="url(#fglow)" opacity="${.7*open}"/></g>`;
+  const dw=fw*(1-open*.82);s+=`<rect x="${fx}" y="${fy-6}" width="${dw}" height="${fh+12}" rx="30" fill="url(#fr)"/><rect x="${fx+dw-40}" y="${fy+260}" width="14" height="200" rx="7" fill="#9aa8a3"/>`;
+  return s}
+function sweat(x,y,t,o){return o<=0?'':[0,1].map(k=>{const p=(t*1.6+k*.5)%1;return `<path transform="translate(${x+k*60} ${y+p*80})" d="M0 -26 Q18 0 0 14 Q-18 0 0 -26 Z" fill="#9fd3ef" opacity="${o*(1-p)}"/>`}).join('')}
+function spoon(x,y,r,o){if(o<=0)return '';return `<g transform="translate(${x} ${y}) rotate(${r})" opacity="${o}"><ellipse cx="0" cy="120" rx="50" ry="70" fill="url(#spoonG)"/><ellipse cx="-8" cy="112" rx="30" ry="44" fill="#fff" opacity=".6"/><path d="M-12 50 Q-9 -120 -5 -260 L5 -260 Q9 -120 12 50 Z" fill="url(#spoonG)"/></g>`}
+function sparkle(x,y,s,o){return o<=0?'':`<path transform="translate(${x} ${y}) scale(${s})" d="M0 -40 L9 -9 L40 0 L9 9 L0 40 L-9 9 L-40 0 L-9 -9 Z" fill="#fff2c9" opacity="${o}"/>`}
+function tagIcon(x,y,o){return o<=0?'':`<g transform="translate(${x} ${y})" opacity="${o}"><rect x="-250" y="-60" width="500" height="120" rx="60" fill="#f7f3e9" stroke="#c95c23" stroke-width="4"/><circle cx="-185" cy="0" r="40" fill="#df8448"/><text x="-185" y="16" text-anchor="middle" font-family="Man" font-weight="800" font-size="46" fill="#fff">@</text><text x="30" y="16" text-anchor="middle" font-family="Man" font-weight="800" font-size="42" fill="#3f554e">чалбай_келчү_дос</text></g>`}
+
+const world=document.getElementById('world'),over=document.getElementById('over'),fin=document.getElementById('final'),badge=document.getElementById('badge');
+document.getElementById('txt').style.cssText+=';color:#fff';
+const HOST=makeHost(document.getElementById('hostL'));
+function render(t){
+  let s=DEFS+room(),ov='';
+  const m=mouthAt(t),bl=blinkAt(t);
+  let hp={x:760,y:1560,s:.5,mouth:m,blink:bl,t,arm:6+Math.sin(t*3)*5,hop:0,show:t<28.9};
+  if(t<3.6){ // S1 звонок в дверь, паника
+    s+=door(t,t<2.6?1:0);
+    hp.x=760;hp.y=1560;hp.s=.5;hp.hop=Math.abs(Math.sin(t*7))*.35*(t<2.4);hp.lean=Math.sin(t*14)*4;hp.arm=-8+Math.sin(t*16)*12;
+    ov+=sweat(900,780,t,1);
+  } else if(t<9.4){ // S2 пустой стол
+    const lt=t-3.6;s+=table(540,1260,false);
+    hp.x=860;hp.y=1640;hp.s=.48;hp.lean=-5;hp.arm=lerp(6,-20,eo(ramp(lt,.3,.4)))+Math.sin(lt*7)*5;
+    ov+=sweat(990,880,t,1-ramp(lt,4,1));
+    ov+=`<text x="540" y="1150" text-anchor="middle" font-family="Man" font-weight="800" font-size="70" fill="#3f554e" opacity="${eo(ramp(lt,.8,.4))}">?</text>`;
+  } else if(t<14.6){ // S3 холодильник: кефир и пол-лимона
+    const lt=t-9.4;s+=fridge(t,eio(ramp(lt,.1,.6)));
+    hp.x=330;hp.y=1600;hp.s=.5;hp.lean=lerp(0,6,eo(ramp(lt,2.2,.6)));hp.arm=lerp(10,28,eo(ramp(lt,.5,.5)));
+  } else if(t<20.6){ // S4 идея: сам становится украшением стола
+    const lt=t-14.6;s+=table(540,1260,true);
+    s+=`<ellipse cx="540" cy="900" rx="${420*eo(ramp(lt,1.2,.6))}" ry="${520*eo(ramp(lt,1.2,.6))}" fill="url(#glw)" opacity=".9"/>`;
+    const j=eio(ramp(lt,.8,.7));hp.x=lerp(880,540,j);hp.y=lerp(1640,1200,j)-Math.sin(Math.PI*j)*260;hp.s=lerp(.48,.42,j);hp.arm=lerp(0,-22,eo(ramp(lt,1.6,.4)))+Math.sin(lt*6)*4;
+    for(let k=0;k<5;k++){const a=k*1.26+lt*.8;ov+=sparkle(540+Math.cos(a)*300,820+Math.sin(a)*330,.6+.3*Math.sin(t*8+k),eo(ramp(lt,1.5,.4)))}
+  } else if(t<25.8){ // S5 ложки приближаются
+    const lt=t-20.6;s+=table(540,1260,true);
+    hp.x=540;hp.y=1200;hp.s=.42;hp.lean=Math.sin(lt*10)*3*(lt>1);hp.arm=lerp(-10,30,eo(ramp(lt,1,.4)));hp.hop=Math.abs(Math.sin(Math.PI*clamp((lt-1)/.35)))*.4;
+    const k=eio(ramp(lt,.2,3.8));
+    [[-330,-20,-28],[330,0,26],[-120,-160,-8],[150,-180,10]].forEach(([dx,dy,r],i)=>{ov+=spoon(540+dx*(1.25-.45*k),lerp(-200,620+dy,eio(ramp(lt,.2+i*.25,2.6))),r,1)});
+    ov+=sweat(700,600,t,eo(ramp(lt,1.2,.3)));
+  } else if(t<28.9){ // S6 отметь друга
+    const lt=t-25.8;s+=door(t,0);
+    hp.x=760;hp.y=1560;hp.s=.5;hp.arm=10+Math.sin(lt*9)*14;
+    ov+=tagIcon(540,580,clamp(back(ramp(lt,.3,.5))));
+  }
+  HOST.set(hp);
+  fin.style.display=t>=28.9?'block':'none';
+  if(t>=28.9){const lp=eo(ramp(t,29.0,.6));const im=fin.querySelector('img');im.style.opacity=lp;im.style.transform=`translateX(-50%) scale(${.96+.04*lp})`;
+    fin.querySelectorAll('.s').forEach((d,i)=>{const p=eo(ramp(t,29.2+i*.25,.4));d.style.opacity=p;d.style.transform=`translateY(${(1-p)*24}px)`});
+    const p=eo(ramp(t,29.3,.5));HOST.set({x:540,y:1820+(1-p)*500,s:.42,mouth:0,blink:bl,t,arm:12+Math.sin(t*9)*16,show:true});}
+  world.innerHTML=s;over.innerHTML=DEFS+ov;
+  badge.style.display=t<28.9?'flex':'none';
+  drawText(t);
+  {const S=window.VOICE&&VOICE.subs.find(q=>t>=q.a&&t<q.b),el=document.getElementById('sub');el.style.display=S?'block':'none';if(S)el.firstChild.textContent=S.text}
+  document.getElementById('stage').style.opacity=1-ramp(t,30.6,.4);
+}
+[[.1,'ding'],[.7,'ding'],[1.3,'step'],[1.7,'step'],[4.0,'whoosh'],[9.6,'click'],[10.2,'whoosh'],[15.2,'ding'],[15.6,'whoosh'],[16.2,'pop'],[20.9,'whoosh'],[22.6,'thud'],[26.2,'pop'],[29.0,'chord']].forEach(([t,s])=>cue(t,s));
+HOST.ready.then(()=>{window.render=render;render(0);const h=document.createElement('script');h.src='../../engine/hook.js';h.onload=()=>{window.READY3D=true};document.body.appendChild(h)});
+</script></body></html>
