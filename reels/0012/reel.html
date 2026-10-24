@@ -1,0 +1,155 @@
+<!doctype html>
+<html><head><meta charset="utf-8">
+<!-- № 12 · ПРОБНЫЙ ЮМОР с новым ведущим «Черепашка» (KY): «Эртең дүйшөмбү — диета?» Ночная кухня, холодильник, Черепашка соблазняет зрителя. 16 с. -->
+<style>
+@font-face{font-family:Corm;font-weight:600;src:url(../../assets/fonts/corm-cyrext.woff2);unicode-range:U+0460-052F}
+@font-face{font-family:Corm;font-weight:600;src:url(../../assets/fonts/corm-cyr.woff2);unicode-range:U+0400-045F,U+2116}
+@font-face{font-family:Corm;font-weight:600;src:url(../../assets/fonts/corm-lat.woff2)}
+@font-face{font-family:Corm;font-style:italic;font-weight:500;src:url(../../assets/fonts/corm-i-cyr.woff2);unicode-range:U+0400-045F}
+@font-face{font-family:Man;font-weight:500 800;src:url(../../assets/fonts/manrope-cyrext.woff2);unicode-range:U+0460-052F}
+@font-face{font-family:Man;font-weight:500 800;src:url(../../assets/fonts/manrope-cyr.woff2);unicode-range:U+0400-045F}
+@font-face{font-family:Man;font-weight:500 800;src:url(../../assets/fonts/manrope-lat.woff2)}
+@font-face{font-family:Mono;font-weight:500;src:url(../../assets/fonts/jbm-cyr.woff2);unicode-range:U+0400-045F,U+2116}
+@font-face{font-family:Mono;font-weight:500;src:url(../../assets/fonts/jbm-lat.woff2)}
+html,body{margin:0;width:1080px;height:1920px;overflow:hidden;background:#3f554e}
+#stage{position:absolute;inset:0;overflow:hidden}
+svg{position:absolute;left:0;top:0}
+#txt{position:absolute;left:60px;right:60px;top:330px;text-align:center;font:800 76px/1.08 Man;color:#fff;text-shadow:0 5px 0 #c95c23,0 10px 26px rgba(0,0,0,.5)}
+#sub{position:absolute;left:0;right:0;bottom:250px;text-align:center;display:none}
+#sub span{display:inline-block;max-width:860px;padding:0 24px;color:#fff;font:700 40px/1.25 Man;white-space:pre-line;text-shadow:0 2px 6px rgba(0,0,0,.55),0 0 2px rgba(0,0,0,.6)}
+#txt .w{display:inline-block;white-space:pre}
+#txt .n{color:#ffd7b8}
+#txt .hl{color:#ffd7b8}
+#label{position:absolute;left:0;right:0;top:380px;text-align:center;font:500 30px Mono;color:#df8448;letter-spacing:4px}
+#badge{position:absolute;left:0;right:0;top:196px;text-align:center;justify-content:center}#badge img{height:150px;filter:brightness(0) invert(1);opacity:0.5}
+#final{position:absolute;inset:0;display:none;background:radial-gradient(circle at 50% 40%,#f7f3e9,#e9e2ce 60%,#aecbc3)}
+#final img{position:absolute;left:50%;top:330px;height:440px;transform:translateX(-50%)}
+#final .s{position:absolute;left:0;right:0;text-align:center;color:#516a63}
+canvas{position:absolute;inset:0}
+
+#hostL{position:absolute;inset:0;pointer-events:none}
+#hk{top:300px !important}
+</style><script src="../../engine/cherepashka.js"></script><script src="voice.js"></script></head><body>
+<div id="stage">
+ <svg id="world" width="1080" height="1920"></svg>
+ <canvas id="fx" width="1080" height="1920"></canvas>
+ <div id="final"><img src="../../assets/logo_brown.png">
+  <div class="s" style="top:820px;font:600 92px Corm">Жекшемби — таттуу.</div>
+  <div class="s" style="top:950px;font:600 34px Man">Дүйшөмбүдөн баштаган досуңузду белгилеңиз 👇</div></div>
+ <div id="hostL"></div>
+ <svg id="over" width="1080" height="1920"></svg>
+ <div id="badge"><img src="../../assets/logo_brown.png"></div>
+ <div id="txt"></div>
+ <div id="sub"><span></span></div>
+</div>
+<script>
+window.READY3D=false;const W=1080,H=1920;
+const clamp=(x,a=0,b=1)=>Math.min(b,Math.max(a,x)), ramp=(t,a,d)=>clamp((t-a)/d);
+const eo=t=>1-Math.pow(1-clamp(t),3), eio=t=>{t=clamp(t);return t<.5?4*t*t*t:1-Math.pow(-2*t+2,3)/2};
+const back=t=>{t=clamp(t);const c=1.9;return 1+(c+1)*Math.pow(t-1,3)+c*Math.pow(t-1,2)};
+const lerp=(a,b,p)=>a+(b-a)*p;
+let sd=7;const rnd=()=>{sd=(sd*16807)%2147483647;return (sd-1)/2147483646};
+const CUES=[];window.CUES=CUES;const cue=(t,s,o={})=>CUES.push({t,s,...o});
+window.DURATION=16;
+window.HOOK={text:'Эртең —<br><i>диета?!</i>',until:1.8};
+window.PUNCH=[3.6,7.4,10.8];
+window.SHAKE=[[5.2,.35]];
+window.POPS=[{t:8.6,text:'🤫',x:820,y:760,d:1.2}];
+const LINES=[
+ {a:2.0,b:3.5,html:'Эртең <span class="hl">дүйшөмбү</span>…'},
+ {a:3.9,b:7.2,html:'Бүгүн — <span class="hl">жекшемби</span>!'},
+ {a:7.7,b:10.6,html:'Бир эле <span class="hl">кашык</span>…'},
+ {a:11.0,b:13.5,html:'Досуңду <span class="hl">белгиле</span> 👇'},
+];
+const txt=document.getElementById('txt');let cur=null;
+function wordsHTML(h){return h.split(/(<br>|<span[^>]*>.*?<\/span>)/).map(p=>p.startsWith('<br')?p:p.startsWith('<span')?`<span class="w">${p}</span>`:p.split(' ').filter(Boolean).map(w=>`<span class="w">${w}</span>`).join(' ')).join(' ')}
+function drawText(t){const L=LINES.find(l=>t>=l.a&&t<l.b);if(L!==cur){cur=L;txt.innerHTML=L?wordsHTML(L.html):''}
+  if(!L)return;txt.querySelectorAll('.w').forEach((w,i)=>{const p=back(ramp(t,L.a+i*.08,.4)),o=ramp(t,L.b-.3,.3);w.style.display='inline-block';w.style.opacity=clamp(p)*(1-o);w.style.transform=`translateY(${(1-p)*40}px) scale(${.7+.3*p})`})}
+function mouthAt(t){return window.VOICE?VOICE.mouth[Math.round(t*30)]||0:0}
+function blinkAt(t){const q=(t+.9)%3.1;return q<.14?Math.sin(q/.14*Math.PI):0}
+
+// ---------- кухня ночью ----------
+const DEFS=`<defs>
+<linearGradient id="wallN" x1="0" y1="0" x2="0" y2="1"><stop offset="0" stop-color="#22312d"/><stop offset=".7" stop-color="#3f554e"/><stop offset="1" stop-color="#2f413c"/></linearGradient>
+<linearGradient id="floorN" x1="0" y1="0" x2="0" y2="1"><stop offset="0" stop-color="#2a3a35"/><stop offset="1" stop-color="#1b2522"/></linearGradient>
+<radialGradient id="fglow" cx=".5" cy=".5" r=".5"><stop offset="0" stop-color="#ffe7bf" stop-opacity=".95"/><stop offset=".5" stop-color="#efc1a4" stop-opacity=".35"/><stop offset="1" stop-color="#df8448" stop-opacity="0"/></radialGradient>
+<linearGradient id="fr" x1="0" y1="0" x2="1" y2="0"><stop offset="0" stop-color="#cfd8d4"/><stop offset=".5" stop-color="#eef2ef"/><stop offset="1" stop-color="#b9c5c0"/></linearGradient>
+<linearGradient id="inF" x1="0" y1="0" x2="0" y2="1"><stop offset="0" stop-color="#fff8e8"/><stop offset="1" stop-color="#f3dcb4"/></linearGradient>
+<radialGradient id="moon"><stop offset="0" stop-color="#fff6df"/><stop offset=".6" stop-color="#efc1a4" stop-opacity=".5"/><stop offset="1" stop-color="#df8448" stop-opacity="0"/></radialGradient>
+<linearGradient id="spoonG" x1="0" y1="0" x2="1" y2="1"><stop offset="0" stop-color="#ffffff"/><stop offset=".5" stop-color="#c9d1ce"/><stop offset="1" stop-color="#8e9a96"/></linearGradient>
+<filter id="b10"><feGaussianBlur stdDeviation="10"/></filter><filter id="b30"><feGaussianBlur stdDeviation="30"/></filter>
+</defs>`;
+const STARS=[...Array(26)].map(()=>[60+rnd()*360,140+rnd()*420,1+rnd()*3,rnd()*6]);
+function kitchen(t,open,cam){ // open 0..1 — дверь холодильника
+  let s=`<rect width="1080" height="1920" fill="url(#wallN)"/>`;
+  // окно с луной слева
+  s+=`<g transform="translate(70 200)"><rect width="380" height="430" rx="18" fill="#17221f"/>${STARS.map(([x,y,r,w])=>`<circle cx="${x-60}" cy="${y-140}" r="${r}" fill="#fff" opacity="${.4+.4*Math.sin(t*3+w)}"/>`).join('')}
+    <circle cx="270" cy="110" r="120" fill="url(#moon)"/><circle cx="270" cy="110" r="46" fill="#fff6df"/>
+    <path d="M0 215 H380 M190 0 V430" stroke="#3f554e" stroke-width="14"/><rect width="380" height="430" rx="18" fill="none" stroke="#3f554e" stroke-width="18"/></g>`;
+  // календарь
+  s+=calendar(240,860,t);
+  // пол
+  s+=`<rect y="1380" width="1080" height="540" fill="url(#floorN)"/><path d="M0 1380 H1080" stroke="#4d665e" stroke-width="6"/>`;
+  // холодильник справа
+  const fx=640,fy=520,fw=380,fh=880;
+  s+=`<ellipse cx="${fx+fw/2}" cy="${fy+fh+10}" rx="${fw*.6}" ry="30" fill="#000" opacity=".35"/>`;
+  s+=`<rect x="${fx}" y="${fy}" width="${fw}" height="${fh}" rx="34" fill="url(#fr)"/>`;
+  if(open>0){ s+=`<rect x="${fx+18}" y="${fy+18}" width="${fw-36}" height="${fh-36}" rx="22" fill="url(#inF)" opacity="${clamp(open*1.5)}"/>`;
+    [0.3,0.55,0.78].forEach(k=>s+=`<rect x="${fx+30}" y="${fy+fh*k}" width="${fw-60}" height="10" rx="5" fill="#e3cfa9" opacity="${open}"/>`);
+    s+=`<g opacity="${open}"><rect x="${fx+60}" y="${fy+fh*.3-90}" width="70" height="90" rx="12" fill="#f0f0e8"/><rect x="${fx+150}" y="${fy+fh*.3-60}" width="120" height="60" rx="20" fill="#df8448"/><circle cx="${fx+300}" cy="${fy+fh*.55-34}" r="34" fill="#93b1a8"/><rect x="${fx+70}" y="${fy+fh*.55-70}" width="150" height="70" rx="10" fill="#efe6d3"/></g>`;
+    s+=`<ellipse cx="${fx+fw/2-160}" cy="${fy+fh*.55}" rx="${520*open}" ry="${620*open}" fill="url(#fglow)" opacity="${.85*open}"/>`;
+    // дверь распахнута влево (в перспективе — узкая)
+    const dw=fw*(1-open*.82);s+=`<rect x="${fx-(fw-dw)*0}" y="${fy-6}" width="${dw}" height="${fh+12}" rx="30" fill="url(#fr)" transform="translate(${-(fw-dw)*0} 0)" opacity="${1-open*.15}"/><rect x="${fx+dw-40}" y="${fy+260}" width="14" height="200" rx="7" fill="#9aa8a3"/>`;
+  } else s+=`<rect x="${fx+fw-60}" y="${fy+260}" width="14" height="200" rx="7" fill="#9aa8a3"/><path d="M${fx} ${fy+300} H${fx+fw}" stroke="#aeb9b5" stroke-width="5"/>`;
+  return s}
+function calendar(x,y,t){const fl=eio(ramp(t,4.6,.5)); // перелистывание на «ЖЕКШЕМБИ»
+  return `<g transform="translate(${x} ${y}) rotate(-4)"><rect x="-130" y="-150" width="260" height="290" rx="16" fill="#f7f3e9"/><rect x="-130" y="-150" width="260" height="70" rx="16" fill="#c95c23"/><rect x="-130" y="-100" width="260" height="20" fill="#c95c23"/>
+   <text y="-102" text-anchor="middle" font-family="Man" font-weight="800" font-size="32" fill="#fff">ОКТЯБРЬ</text>
+   <text y="40" text-anchor="middle" font-family="Man" font-weight="800" font-size="130" fill="#3f554e">25</text>
+   <text y="105" text-anchor="middle" font-family="Man" font-weight="800" font-size="34" fill="#c95c23">ЖЕКШЕМБИ</text>
+   <circle cx="-80" cy="-150" r="10" fill="#3f554e"/><circle cx="80" cy="-150" r="10" fill="#3f554e"/>
+   ${fl<1?`<g transform="translate(0 -80) scale(1 ${1-fl}) translate(0 80)" opacity="${1-fl*.5}"><rect x="-130" y="-80" width="260" height="220" fill="#efe9da"/><text y="40" text-anchor="middle" font-family="Man" font-weight="800" font-size="130" fill="#7f958e">24</text><text y="105" text-anchor="middle" font-family="Man" font-weight="800" font-size="34" fill="#7f958e">ИШЕМБИ</text></g>`:''}</g>`}
+function spoon(x,y,r,o){if(o<=0)return '';return `<g transform="translate(${x} ${y}) rotate(${r})" opacity="${o}"><ellipse cx="0" cy="-120" rx="58" ry="80" fill="url(#spoonG)"/><ellipse cx="-8" cy="-130" rx="36" ry="52" fill="#fff" opacity=".6"/><path d="M-14 -50 Q-10 120 -6 220 L6 220 Q10 120 14 -50 Z" fill="url(#spoonG)"/>
+  <ellipse cx="0" cy="-108" rx="40" ry="40" fill="#f6ecd6"/><circle cx="-12" cy="-118" r="6" fill="#6b3a1e"/><circle cx="14" cy="-100" r="5" fill="#6b3a1e"/><circle cx="2" cy="-90" r="4" fill="#6b3a1e"/></g>`}
+function sparkle(x,y,s,o){return o<=0?'':`<path transform="translate(${x} ${y}) scale(${s})" d="M0 -40 L9 -9 L40 0 L9 9 L0 40 L-9 9 L-40 0 L-9 -9 Z" fill="#ffe7bf" opacity="${o}"/>`}
+function tagIcon(x,y,o){return o<=0?'':`<g transform="translate(${x} ${y})" opacity="${o}"><rect x="-230" y="-60" width="460" height="120" rx="60" fill="#f7f3e9"/><circle cx="-165" cy="0" r="40" fill="#df8448"/><text x="-165" y="16" text-anchor="middle" font-family="Man" font-weight="800" font-size="46" fill="#fff">@</text><text x="30" y="16" text-anchor="middle" font-family="Man" font-weight="800" font-size="44" fill="#3f554e">досуң_ушул</text></g>`}
+
+const world=document.getElementById('world'),over=document.getElementById('over'),fin=document.getElementById('final'),badge=document.getElementById('badge');
+const HOST=makeHost(document.getElementById('hostL'));
+function render(t){
+  let s=DEFS,ov='';
+  const m=mouthAt(t),bl=blinkAt(t);
+  const open=eio(ramp(t,.15,.7));
+  s+=kitchen(t,open);
+  let hp={x:560,y:1500,s:.5,mouth:m,blink:bl,t,arm:6+Math.sin(t*3)*5,hop:0,show:t<13.6&&t>.42};
+  if(t<3.6){ // S1: дверь открывается, Черепашка выходит из света
+    const k=eo(ramp(t,.42,.9));hp.x=lerp(800,560,k);hp.s=lerp(.3,.5,k);hp.y=lerp(1300,1500,k);
+    hp.hop=Math.abs(Math.sin(Math.PI*clamp((t-.4)/.45)))*.6*(t<1.3?1:0)+Math.abs(Math.sin(Math.PI*clamp((t-.85)/.45)))*.4*(t<1.3?1:0);
+  } else if(t<7.4){ // S2: календарь — сегодня жекшемби
+    const lt=t-3.6;hp.x=640;hp.s=.56;hp.y=1560;hp.lean=-4;
+    hp.arm=lerp(6,-18,eo(ramp(lt,.3,.4)))+Math.sin(lt*8)*4*(lt>.7&&lt<2.6);
+    hp.hop=Math.abs(Math.sin(Math.PI*clamp((lt-1.5)/.4)))*.5;
+    ov+=sparkle(240,700,1+.3*Math.sin(t*9),eo(ramp(lt,1.1,.3))*(1-ramp(lt,3.4,.3)));
+  } else if(t<10.8){ // S3: одна ложечка
+    const lt=t-7.4;hp.x=600;hp.s=.58;hp.y=1570;hp.lean=3;hp.arm=lerp(-5,22,eo(ramp(lt,.2,.5)));
+    const sp=back(ramp(lt,.3,.6));ov+=spoon(300,1000+(1-sp)*300+Math.sin(t*3)*14,-14,clamp(sp));
+    ov+=sparkle(370,860,.8+.4*Math.sin(t*10),clamp(sp)*.9)+sparkle(210,1080,.5+.3*Math.sin(t*8+1),clamp(sp)*.8);
+    hp.blink=lt>1.3&&lt<1.75?Math.sin(Math.PI*(lt-1.3)/.45):bl;
+  } else if(t<13.6){ // S4: отметь друга
+    const lt=t-10.8;hp.x=540;hp.s=.52;hp.y=1560;hp.arm=10+Math.sin(lt*9)*14;
+    ov+=tagIcon(540,560,back(ramp(lt,.3,.5))>0?clamp(back(ramp(lt,.3,.5))):0);
+  }
+  HOST.set(hp);
+  fin.style.display=t>=13.6?'block':'none';
+  if(t>=13.6){const lp=eo(ramp(t,13.7,.6));const im=fin.querySelector('img');im.style.opacity=lp;im.style.transform=`translateX(-50%) scale(${.96+.04*lp})`;
+    fin.querySelectorAll('.s').forEach((d,i)=>{const p=eo(ramp(t,14.0+i*.25,.4));d.style.opacity=p;d.style.transform=`translateY(${(1-p)*24}px)`});
+    const p=eo(ramp(t,14.2,.5));HOST.set({x:540,y:1820+(1-p)*500,s:.42,mouth:0,blink:bl,t,arm:12+Math.sin(t*9)*16,show:true});}
+  world.innerHTML=s;over.innerHTML=DEFS+ov;
+  badge.style.display=t<13.6?'flex':'none';
+  drawText(t);
+  {const S=window.VOICE&&VOICE.subs.find(q=>t>=q.a&&t<q.b),el=document.getElementById('sub');el.style.display=S?'block':'none';if(S)el.firstChild.textContent=S.text}
+  document.getElementById('stage').style.opacity=1-ramp(t,15.6,.4);
+}
+[[.2,'whoosh'],[.6,'step'],[1.0,'step'],[4.6,'click'],[5.2,'thud'],[7.7,'pop'],[8.3,'ding'],[11.1,'pop'],[13.8,'chord']].forEach(([t,s])=>cue(t,s));
+HOST.ready.then(()=>{window.render=render;render(0);const h=document.createElement('script');h.src='../../engine/hook.js';h.onload=()=>{window.READY3D=true};document.body.appendChild(h)});
+</script></body></html>
